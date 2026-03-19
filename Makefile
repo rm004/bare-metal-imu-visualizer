@@ -21,5 +21,9 @@ startup_stm32f446retx.o: startup/startup_stm32f446retx.s
 blinky.elf: main.o gpio.o syscalls.o sysmem.o system_stm32f4xx.o startup_stm32f446retx.o
 	arm-none-eabi-gcc -mcpu=cortex-m4 -mthumb -T STM32F446RETX_FLASH.ld build/obj/*.o -o build/bin/blinky.elf -Wl,-Map=build/bin/blinky.map
 
+flash: blinky.elf
+	openocd -f interface/stlink.cfg -f target/stm32f4x.cfg \
+	-c "program build/bin/blinky.elf verify reset exit"
+
 clean:
 	rm -r build/bin/* build/obj/*
