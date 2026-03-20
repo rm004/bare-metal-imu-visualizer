@@ -1,7 +1,12 @@
 on: [push]
 
 jobs:
-    build_and_static_analysis:
-        runs-on: ubuntu-latest
-        container:
-            image: rm004/arm-gnu-gcc-15.2:latest
+  build_and_static_analysis:
+    runs-on: ubuntu-latest
+    container:
+      image: rm004/arm-gnu-gcc-15.2:latest
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@v6
+      - run: make
+      - run: make cppcheck
