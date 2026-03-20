@@ -2,7 +2,7 @@
 This repository tracks the code of a Bare Metal IMU Visualizer as I write it from scratch. The goal is to build professional STM32F446RE bare metal drivers for GPIO, I2C, UART, and the MPU6050. Then to use those drivers to get the orientation of the IMU, send it to a PC, and visualize the orientation in a 3D python program.
 
 ## Build
-I have setup the project to build using the `arm-gnu-toolchain`, `make` and `openocd`. Therefore, those dependenies must be installed in order build and flash this project. Here is a list of the available `make` commands:
+I have setup the project to build using the `arm-gnu-toolchain`, `make` and `openocd`. The project also can run static analysis on source files using `cppcheck`. Therefore, those dependenies must be installed in order build and flash this project. Here is a list of the available `make` commands:
 
 | Command        | Description                                                                         |
 |----------------|-------------------------------------------------------------------------------------|
