@@ -26,7 +26,7 @@ ASM_OBJECTS = $(patsubst %.s, $(OBJ_DIR)/%.o, $(ASM_SOURCES))
 MCPU = cortex-m4
 DEVICE = STM32F446xx
 WFLAGS = -Wall -Wextra -Werror -Wshadow
-CFLAGS = -mcpu=$(MCPU) -mthumb $(WFLAGS) $(addprefix -I, $(INCLUDE_DIRS)) -D $(DEVICE)
+CFLAGS = -mcpu=$(MCPU) -mthumb $(WFLAGS) $(addprefix -I, $(INCLUDE_DIRS)) -D$(DEVICE)
 LDFLAGS = -mcpu=$(MCPU) -mthumb -T $(LINKER_SCRIPT)
 
 VERBOSE ?= 0
@@ -61,4 +61,4 @@ flash: $(TARGET)
 	-c "program $(TARGET) verify reset exit"
 
 clean:
-	$(Q)rm -r $(BIN_DIR)/* $(OBJ_DIR)/*
+	$(Q)rm -r $(BUILD_DIR)
