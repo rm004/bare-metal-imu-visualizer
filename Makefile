@@ -9,6 +9,7 @@ BIN_DIR = $(BUILD_DIR)/bin
 
 #Toolchain
 CC = arm-none-eabi-gcc
+CPPCHECK = cppcheck
 
 #Files
 TARGET = $(BIN_DIR)/blinky
@@ -36,29 +37,43 @@ else
 Q := @
 endif
 
+# Build
+## Compiling .c files
 $(OBJ_DIR)/%.o: %.c 
 	$(Q)mkdir -p $(dir $@)
 	$(Q)echo "CC $^ -> $@"
 	$(Q)$(CC) $(CFLAGS) -c $^ -o $@
 
+## Compiling .s files
 $(OBJ_DIR)/%.o: %.s
 	$(Q)mkdir -p $(dir $@)
 	$(Q)echo "CC $^ -> $@"
 	$(Q)$(CC) $(CFLAGS) -c $^ -o $@
 
+## Linking
 $(TARGET): $(C_OBJECTS) $(ASM_OBJECTS)
 	$(Q)mkdir -p $(BIN_DIR)
 	$(Q)echo "Linking -> $@"
 	$(Q)$(CC) $(LDFLAGS) $^ -o $@
 
-.PHONY: clean flash final
+# Phonies
+.PHONY: all clean flash cppcheck
 
-final: $(TARGET)
+all: $(TARGET)
+
+clean:
+	$(Q)rm -r $(BUILD_DIR)
 
 flash: $(TARGET)
 	openocd -f interface/stlink.cfg \
 	-f target/stm32f4x.cfg \
 	-c "program $(TARGET) verify reset exit"
 
-clean:
-	$(Q)rm -r $(BUILD_DIR)
+cppcheck:
+	$(Q)$(CPPCHECK) --quiet --enable=all --error-exitcode=1 \
+	--inline-suppr \
+	-I $(SRC_HEADERS) \
+	$(C_SOURCES) \
+	-i src/system \
+	--suppress=missingInclude \
+	--suppress=checkersReport
