@@ -7,11 +7,11 @@ BUILD_DIR = build
 OBJ_DIR = $(BUILD_DIR)/obj
 BIN_DIR = $(BUILD_DIR)/bin
 
-#Toolchain
+# Toolchain
 CC = arm-none-eabi-gcc
 CPPCHECK = cppcheck
 
-#Files
+# Files
 TARGET = $(BIN_DIR)/blinky
 LINKER_SCRIPT = STM32F446RETX_FLASH.ld
 C_SOURCES = src/main.c \
