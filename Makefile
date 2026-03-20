@@ -1,29 +1,64 @@
-final: blinky.elf
+# Directories
+CMSIS_INCLUDE_DIR = cmsis/Include
+CMSIS_STM32F4XX_INCLUDE_DIR = cmsis/Device/ST/STM32F4xx/Include
+SRC_HEADERS = inc
+INCLUDE_DIRS = $(CMSIS_INCLUDE_DIR) $(CMSIS_STM32F4XX_INCLUDE_DIR) $(SRC_HEADERS)
+BUILD_DIR = build
+OBJ_DIR = $(BUILD_DIR)/obj
+BIN_DIR = $(BUILD_DIR)/bin
 
-main.o: src/main.c
-	arm-none-eabi-gcc -I cmsis/Device/ST/STM32F4xx/Include/ -I cmsis/Include -I inc -D STM32F446xx -c -mcpu=cortex-m4 -mthumb src/main.c -o build/obj/main.o
+#Toolchain
+CC = arm-none-eabi-gcc
 
-syscalls.o: src/system/syscalls.c
-	arm-none-eabi-gcc -I inc -c -mcpu=cortex-m4 -mthumb src/system/syscalls.c -o build/obj/syscalls.o
+#Files
+TARGET = $(BIN_DIR)/blinky
+LINKER_SCRIPT = STM32F446RETX_FLASH.ld
+C_SOURCES = src/main.c \
+		  src/system/syscalls.c \
+		  src/system/sysmem.c \
+		  src/system/system_stm32f4xx.c \
+		  src/drivers/gpio.c
+ASM_SOURCES = startup/startup_stm32f446retx.s
+C_OBJECTS = $(patsubst %.c, $(OBJ_DIR)/%.o, $(C_SOURCES))
+ASM_OBJECTS = $(patsubst %.s, $(OBJ_DIR)/%.o, $(ASM_SOURCES))
 
-sysmem.o: src/system/sysmem.c
-	arm-none-eabi-gcc -I inc -c -mcpu=cortex-m4 -mthumb src/system/sysmem.c -o build/obj/sysmem.o
+# Flags
+MCPU = cortex-m4
+DEVICE = STM32F446xx
+WFLAGS = -Wall -Wextra -Werror -Wshadow
+CFLAGS = -mcpu=$(MCPU) -mthumb $(WFLAGS) $(addprefix -I, $(INCLUDE_DIRS)) -D $(DEVICE)
+LDFLAGS = -mcpu=$(MCPU) -mthumb -T $(LINKER_SCRIPT)
 
-system_stm32f4xx.o: src/system/system_stm32f4xx.c
-	arm-none-eabi-gcc -I cmsis/Device/ST/STM32F4xx/Include/ -I cmsis/Include -I inc -D STM32F446xx -c -mcpu=cortex-m4 -mthumb src/system/system_stm32f4xx.c -o build/obj/system_stm32f4xx.o
+VERBOSE ?= 0
+ifeq ($(VERBOSE), 1)
+Q := 
+else
+Q := @
+endif
 
-gpio.o: src/drivers/gpio.c
-	arm-none-eabi-gcc -I inc -c -mcpu=cortex-m4 -mthumb src/drivers/gpio.c -o build/obj/gpio.o
+$(OBJ_DIR)/%.o: %.c 
+	$(Q)mkdir -p $(dir $@)
+	$(Q)echo "CC $^ -> $@"
+	$(Q)$(CC) $(CFLAGS) -c $^ -o $@
 
-startup_stm32f446retx.o: startup/startup_stm32f446retx.s
-	arm-none-eabi-gcc -c -mcpu=cortex-m4 -mthumb startup/startup_stm32f446retx.s -o build/obj/startup_stm32f446retx.o
+$(OBJ_DIR)/%.o: %.s
+	$(Q)mkdir -p $(dir $@)
+	$(Q)echo "CC $^ -> $@"
+	$(Q)$(CC) $(CFLAGS) -c $^ -o $@
 
-blinky.elf: main.o gpio.o syscalls.o sysmem.o system_stm32f4xx.o startup_stm32f446retx.o
-	arm-none-eabi-gcc -mcpu=cortex-m4 -mthumb -T STM32F446RETX_FLASH.ld build/obj/*.o -o build/bin/blinky.elf -Wl,-Map=build/bin/blinky.map
+$(TARGET): $(C_OBJECTS) $(ASM_OBJECTS)
+	$(Q)mkdir -p $(BIN_DIR)
+	$(Q)echo "Linking -> $@"
+	$(Q)$(CC) $(LDFLAGS) $^ -o $@
 
-flash: blinky.elf
-	openocd -f interface/stlink.cfg -f target/stm32f4x.cfg \
-	-c "program build/bin/blinky.elf verify reset exit"
+.PHONY: clean flash final
+
+final: $(TARGET)
+
+flash: $(TARGET)
+	openocd -f interface/stlink.cfg \
+	-f target/stm32f4x.cfg \
+	-c "program $(TARGET) verify reset exit"
 
 clean:
-	rm -r build/bin/* build/obj/*
+	$(Q)rm -r $(BIN_DIR)/* $(OBJ_DIR)/*
