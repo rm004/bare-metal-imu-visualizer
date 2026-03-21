@@ -15,7 +15,8 @@ CPPCHECK = cppcheck
 TARGET = $(BIN_DIR)/blinky
 LINKER_SCRIPT = STM32F446RETX_FLASH.ld
 C_SOURCES_WITH_HEADERS = \
-	src/drivers/gpio.c
+	src/drivers/gpio.c \
+	src/common/pins.c
 C_SOURCES = \
 	src/main.c \
 	src/system/syscalls.c \
