@@ -43,19 +43,19 @@ endif
 
 # Build
 ## Compiling .c files
-$(OBJ_DIR)/%.o: %.c 
+$(OBJ_DIR)/%.o: %.c $(HEADERS)
 	$(Q)mkdir -p $(dir $@)
-	$(Q)echo "CC $^ -> $@"
-	$(Q)$(CC) $(CFLAGS) -c $^ -o $@
+	$(Q)echo "CC $< -> $@"
+	$(Q)$(CC) $(CFLAGS) -c $< -o $@
 
 ## Compiling .s files
 $(OBJ_DIR)/%.o: %.s
 	$(Q)mkdir -p $(dir $@)
-	$(Q)echo "CC $^ -> $@"
-	$(Q)$(CC) $(CFLAGS) -c $^ -o $@
+	$(Q)echo "CC $< -> $@"
+	$(Q)$(CC) $(CFLAGS) -c $< -o $@
 
 ## Linking
-$(TARGET): $(C_OBJECTS) $(ASM_OBJECTS) $(HEADERS)
+$(TARGET): $(C_OBJECTS) $(ASM_OBJECTS)
 	$(Q)mkdir -p $(BIN_DIR)
 	$(Q)echo "Linking -> $@"
 	$(Q)$(CC) $(LDFLAGS) $^ -o $@
@@ -66,7 +66,7 @@ $(TARGET): $(C_OBJECTS) $(ASM_OBJECTS) $(HEADERS)
 all: $(TARGET)
 
 clean:
-	$(Q)rm -r $(BUILD_DIR)
+	$(Q)rm -rf $(BUILD_DIR)
 
 flash: $(TARGET)
 	openocd -f interface/stlink.cfg \
