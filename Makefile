@@ -37,7 +37,8 @@ CPPCHECK_SUPPRESS_FLAGS = \
 	--suppress=missingInclude \
 	--suppress=checkersReport \
 	--suppress=staticFunction \
-	--suppress=missingIncludeSystem 
+	--suppress=missingIncludeSystem  \
+	--suppress=unmatchedSuppression
 
 VERBOSE ?= 0
 ifeq ($(VERBOSE), 1)
