@@ -49,11 +49,19 @@ void gpio_init(const gpio_t *gpio)
 
 void gpio_write(const gpio_t *gpio, gpio_state_t state)
 {
-	gpio->port->BSRR = (0x1u << (state == GPIO_HIGH ? gpio->pin : (gpio->pin + 16u)));
+	if (gpio->config.mode == GPIO_MODE_OUPUT)
+	{
+		gpio->port->BSRR = (0x1u << (state == GPIO_HIGH ? gpio->pin : (gpio->pin + 16u)));
+	}
 }
 
 void gpio_toggle(const gpio_t *gpio)
 {
 	gpio_state_t new_state = ((gpio->port->ODR & (0x1u << gpio->pin)) != 0u) ? GPIO_LOW : GPIO_HIGH;
 	gpio_write(gpio, new_state);
+}
+
+gpio_state_t gpio_read(const gpio_t *gpio)
+{
+	return ((gpio->port->IDR & (0x1u << gpio->pin)) != 0u) ? GPIO_HIGH : GPIO_LOW;
 }

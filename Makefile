@@ -34,11 +34,12 @@ WFLAGS = -Wall -Wextra -Werror -Wshadow
 CFLAGS = -mcpu=$(MCPU) -mthumb $(WFLAGS) $(addprefix -I, $(INCLUDE_DIRS)) -D$(DEVICE)
 LDFLAGS = -mcpu=$(MCPU) -mthumb -T $(LINKER_SCRIPT)
 CPPCHECK_SUPPRESS_FLAGS = \
+	--suppress=unmatchedSuppression \
 	--suppress=missingInclude \
 	--suppress=checkersReport \
 	--suppress=staticFunction \
 	--suppress=missingIncludeSystem  \
-	--suppress=unmatchedSuppression
+	--suppress=unusedFunction
 
 VERBOSE ?= 0
 ifeq ($(VERBOSE), 1)

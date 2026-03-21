@@ -96,19 +96,9 @@ typedef struct
 	gpio_config_t config;
 } gpio_t;
 
-typedef enum
-{
-	GPIO_EN_INDEX_PORT_A = 0x0u,
-	GPIO_EN_INDEX_PORT_B,
-	GPIO_EN_INDEX_PORT_C,
-	GPIO_EN_INDEX_PORT_D,
-	GPIO_EN_INDEX_PORT_E,
-	GPIO_EN_INDEX_PORT_F,
-	GPIO_EN_INDEX_PORT_G
-} gpio_port_en_index_t;
-
 void gpio_init(const gpio_t *gpio);
 void gpio_write(const gpio_t *gpio, gpio_state_t state);
 void gpio_toggle(const gpio_t *gpio);
+gpio_state_t gpio_read(const gpio_t *gpio);
 
 #endif // GPIO_H
