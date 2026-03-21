@@ -15,7 +15,8 @@ CPPCHECK = cppcheck
 TARGET = $(BIN_DIR)/blinky
 LINKER_SCRIPT = STM32F446RETX_FLASH.ld
 C_SOURCES_WITH_HEADERS = \
-	src/drivers/gpio.c
+	src/drivers/gpio.c \
+	src/common/pins.c
 C_SOURCES = \
 	src/main.c \
 	src/system/syscalls.c \
@@ -33,6 +34,13 @@ DEVICE = STM32F446xx
 WFLAGS = -Wall -Wextra -Werror -Wshadow
 CFLAGS = -mcpu=$(MCPU) -mthumb $(WFLAGS) $(addprefix -I, $(INCLUDE_DIRS)) -D$(DEVICE)
 LDFLAGS = -mcpu=$(MCPU) -mthumb -T $(LINKER_SCRIPT)
+CPPCHECK_SUPPRESS_FLAGS = \
+	--suppress=unmatchedSuppression \
+	--suppress=missingInclude \
+	--suppress=checkersReport \
+	--suppress=staticFunction \
+	--suppress=missingIncludeSystem  \
+	--suppress=unusedFunction
 
 VERBOSE ?= 0
 ifeq ($(VERBOSE), 1)
@@ -43,19 +51,19 @@ endif
 
 # Build
 ## Compiling .c files
-$(OBJ_DIR)/%.o: %.c 
+$(OBJ_DIR)/%.o: %.c $(HEADERS)
 	$(Q)mkdir -p $(dir $@)
-	$(Q)echo "CC $^ -> $@"
-	$(Q)$(CC) $(CFLAGS) -c $^ -o $@
+	$(Q)echo "CC $< -> $@"
+	$(Q)$(CC) $(CFLAGS) -c $< -o $@
 
 ## Compiling .s files
 $(OBJ_DIR)/%.o: %.s
 	$(Q)mkdir -p $(dir $@)
-	$(Q)echo "CC $^ -> $@"
-	$(Q)$(CC) $(CFLAGS) -c $^ -o $@
+	$(Q)echo "CC $< -> $@"
+	$(Q)$(CC) $(CFLAGS) -c $< -o $@
 
 ## Linking
-$(TARGET): $(C_OBJECTS) $(ASM_OBJECTS) $(HEADERS)
+$(TARGET): $(C_OBJECTS) $(ASM_OBJECTS)
 	$(Q)mkdir -p $(BIN_DIR)
 	$(Q)echo "Linking -> $@"
 	$(Q)$(CC) $(LDFLAGS) $^ -o $@
@@ -66,7 +74,7 @@ $(TARGET): $(C_OBJECTS) $(ASM_OBJECTS) $(HEADERS)
 all: $(TARGET)
 
 clean:
-	$(Q)rm -r $(BUILD_DIR)
+	$(Q)rm -rf $(BUILD_DIR)
 
 flash: $(TARGET)
 	openocd -f interface/stlink.cfg \
@@ -76,8 +84,8 @@ flash: $(TARGET)
 cppcheck:
 	$(Q)$(CPPCHECK) --quiet --enable=all --error-exitcode=1 \
 	--inline-suppr \
+	--check-level=exhaustive \
 	-I $(SRC_HEADERS_DIR) \
 	$(C_SOURCES) \
 	-i src/system \
-	--suppress=missingInclude \
-	--suppress=checkersReport
+	$(CPPCHECK_SUPPRESS_FLAGS)
