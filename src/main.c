@@ -1,22 +1,30 @@
 #include "drivers/gpio.h"
 #include "stm32f4xx.h"
 
-#define GPIOA_EN    (1u << 0)
-#define PIN5        (5)
-#define LED_PIN     (1u << 5)
-
 int main(void)
 {
-	print_hello();
+	// Congigure LED pin
+	const gpio_t LED_PIN =
+	{
+		.port = GPIOA,
+		.pin = GPIO_PIN_5,
+		.config =
+		{
+			.mode = GPIO_MODE_OUPUT,
+			.output_type = GPIO_OUTPUT_TYPE_PUSH_PULL,
+			.speed = GPIO_SPEED_LOW,
+			.resist = GPIO_RESIST_NONE,
+			.alt_func = GPIO_ALT_FUNC_0
+		}
+	};
 
-	RCC->AHB1ENR |= GPIOA_EN;
-
-	GPIOA->MODER |= (1u << (PIN5 * 2u));
-	GPIOA->MODER &= ~(1u << ((PIN5 * 2u) + 1u));
+	// Init LED pin
+	gpio_init(&LED_PIN);
 
 	while (1)
 	{
-		GPIOA->ODR ^= LED_PIN;
+		// Toggle LED
+		gpio_toggle(&LED_PIN);
 		for (int i = 0; i < 100000; i++) {}
 	}
 }

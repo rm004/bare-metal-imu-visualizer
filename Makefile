@@ -33,6 +33,11 @@ DEVICE = STM32F446xx
 WFLAGS = -Wall -Wextra -Werror -Wshadow
 CFLAGS = -mcpu=$(MCPU) -mthumb $(WFLAGS) $(addprefix -I, $(INCLUDE_DIRS)) -D$(DEVICE)
 LDFLAGS = -mcpu=$(MCPU) -mthumb -T $(LINKER_SCRIPT)
+CPPCHECK_SUPPRESS_FLAGS = \
+	--suppress=missingInclude \
+	--suppress=checkersReport \
+	--suppress=staticFunction \
+	--suppress=missingIncludeSystem 
 
 VERBOSE ?= 0
 ifeq ($(VERBOSE), 1)
@@ -76,8 +81,8 @@ flash: $(TARGET)
 cppcheck:
 	$(Q)$(CPPCHECK) --quiet --enable=all --error-exitcode=1 \
 	--inline-suppr \
+	--check-level=exhaustive \
 	-I $(SRC_HEADERS_DIR) \
 	$(C_SOURCES) \
 	-i src/system \
-	--suppress=missingInclude \
-	--suppress=checkersReport
+	$(CPPCHECK_SUPPRESS_FLAGS)
