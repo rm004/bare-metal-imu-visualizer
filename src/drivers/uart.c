@@ -1,5 +1,6 @@
 #include "drivers/uart.h"
 #include "drivers/gpio.h"
+#include "common/circular_buffer.h"
 #include "stm32f4xx.h"
 
 #include <stdint.h>
@@ -13,45 +14,120 @@
 #define UART_CR1_RE        (1u << 2u)
 #define UART_CR1_UE        (1u << 13u)
 #define UART_CR1_RXNEIE    (1u << 5u)
+#define UART_CR1_TXEIE     (1u << 7u)
+#define UART_SR_TXE        (1u << 7u)
+#define UART_SR_RXNE       (1u << 5u)
+
+static circular_buffer_t tx_buf;
+static circular_buffer_t rx_buf;
 
 static void configure_pins(void);
 static void configure_uart(void);
 static uint16_t compute_uart_baudrate(uint32_t periph_clk, uint32_t baudrate);
 
+int __io_putchar(int ch)
+{
+	const uint8_t data[1] = {ch};
+
+	uart_write(data, 1);
+
+	return ch;
+}
+
 void uart_init(void)
 {
+	circular_buffer_init(&tx_buf, CIRCULAR_BUFFER_MAX_SIZE);
+	circular_buffer_init(&rx_buf, CIRCULAR_BUFFER_MAX_SIZE);
+
 	configure_pins();
 	configure_uart();
 }
 
-// void uart_write(uint8_t *data, const uint32_t length)
-// {
+bool uart_write(const uint8_t *data, uint8_t length)
+{
+	uint8_t bytes_written = 0;
 
-// }
+	if (data && length > 0)
+	{
+		for (uint8_t i = 0; i < length; i++)
+		{
+			// Make sure shared buffer write is not interrupted
+			NVIC_DisableIRQ(USART2_IRQn);
+			bool write_result = circular_buffer_put(&tx_buf, data[i]);
+			NVIC_EnableIRQ(USART2_IRQn);
+			
+			if (write_result)
+			{
+				bytes_written++;
+			}
+			else
+			{
+				break;
+			}
+		}
 
-// void uart_write_byte(uint8_t data)
-// {
+		if (bytes_written > 0)
+		{
+			// Enable TXE interrupts to send the data in the buffer
+			USART2->CR1 |= UART_CR1_TXEIE;
+		}
+	}
 
-// }
+	return bytes_written == length;
+}
 
-// uint32_t uart_read(uint8_t *data, const uint32_t length)
-// {
+bool uart_read(uint8_t *data, uint8_t length)
+{
+	uint8_t bytes_read = 0;
 
-// }
+	uint8_t byte = 0;
 
-// uint8_t uart_read_byte(void)
-// {
+	while (bytes_read < length)
+	{
+		NVIC_DisableIRQ(USART2_IRQn);
+		bool read_result = circular_buffer_get(&rx_buf, &byte);
+		NVIC_EnableIRQ(USART2_IRQn);
 
-// }
+		if (read_result)
+		{
+			data[bytes_read] = byte;
+			bytes_read++;
+		}
+		else
+		{
+			break;
+		}
+	}
 
-// bool uart_data_available(void)
-// {
-
-// }
+	return bytes_read == length;
+}
 
 void USART2_IRQHandler(void)
 {
+	if ((USART2->SR & UART_SR_RXNE) && (USART2->CR1 & UART_CR1_RXNEIE))
+	{
+		uint8_t data = USART2->DR;
 
+		circular_buffer_put(&rx_buf, data);
+	}
+
+	if ((USART2->SR & UART_SR_TXE) && (USART2->CR1 & UART_CR1_TXEIE))
+	{
+		uint8_t data = 0;
+
+		bool get_success = circular_buffer_get(&tx_buf, &data);
+
+		if (get_success)
+		{
+			USART2->DR = data;
+		}
+
+		if (!get_success || circular_buffer_empty(&tx_buf))
+		{
+			// Disable TXE interrupt because all data has been sent
+			USART2->CR1 &= ~(UART_CR1_TXEIE);
+		}
+	}
 }
 
 static void configure_pins(void)
@@ -120,5 +196,6 @@ static void configure_uart(void)
 
 static uint16_t compute_uart_baudrate(uint32_t periph_clk, uint32_t baudrate)
 {
-	return ((periph_clk + (baudrate / 2u)) / baudrate);
+	uint32_t usartdiv_times_16 = (periph_clk + (baudrate / 2u)) / baudrate;
+    return (uint16_t)usartdiv_times_16;
 }

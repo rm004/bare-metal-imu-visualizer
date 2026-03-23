@@ -4,7 +4,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-#define CIRCULAR_BUFFER_MAX_SIZE    256
+#define CIRCULAR_BUFFER_MAX_SIZE    UINT8_MAX
 
 typedef struct
 {

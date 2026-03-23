@@ -71,11 +71,12 @@ $(TARGET): $(C_OBJECTS) $(ASM_OBJECTS)
 	$(Q)$(CC) $(LDFLAGS) $^ -o $@
 
 # Phonies
-.PHONY: all clean flash cppcheck
+.PHONY: all clean flash cppcheck ready
 
 all: $(TARGET)
 
 clean:
+	$(Q)echo "Cleaning..."
 	$(Q)rm -rf $(BUILD_DIR)
 
 flash: $(TARGET)
@@ -91,3 +92,5 @@ cppcheck:
 	$(C_SOURCES) \
 	-i src/system \
 	$(CPPCHECK_SUPPRESS_FLAGS)
+
+ready: clean all cppcheck
