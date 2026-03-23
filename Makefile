@@ -16,7 +16,9 @@ TARGET = $(BIN_DIR)/blinky
 LINKER_SCRIPT = STM32F446RETX_FLASH.ld
 C_SOURCES_WITH_HEADERS = \
 	src/drivers/gpio.c \
-	src/common/pins.c
+	src/common/pins.c \
+	src/drivers/uart.c \
+	src/common/circular_buffer.c
 C_SOURCES = \
 	src/main.c \
 	src/system/syscalls.c \
@@ -69,11 +71,12 @@ $(TARGET): $(C_OBJECTS) $(ASM_OBJECTS)
 	$(Q)$(CC) $(LDFLAGS) $^ -o $@
 
 # Phonies
-.PHONY: all clean flash cppcheck
+.PHONY: all clean flash cppcheck ready
 
 all: $(TARGET)
 
 clean:
+	$(Q)echo "Cleaning..."
 	$(Q)rm -rf $(BUILD_DIR)
 
 flash: $(TARGET)
@@ -89,3 +92,5 @@ cppcheck:
 	$(C_SOURCES) \
 	-i src/system \
 	$(CPPCHECK_SUPPRESS_FLAGS)
+
+ready: clean all cppcheck
